@@ -1,0 +1,23 @@
+{
+  "plugins": [
+    [
+      "../../../../src",
+      {
+        "mappings": [
+          {
+            "sourceMask": "Masked",
+            "targetName": "targetName"
+          },
+          {
+            "sourceMask": "^(.*?)(?:-*)source(?:-*)(.*)$",
+            "targetMask": "$2$1"
+          },
+          {
+            "sourceMask": "^(.+?)-src-(.*)$",
+            "targetMask": "$2-target-$1"
+          }
+        ]
+      }
+    ]
+  ]
+}

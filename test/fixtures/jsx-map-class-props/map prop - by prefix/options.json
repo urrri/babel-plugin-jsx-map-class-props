@@ -1,0 +1,18 @@
+{
+  "plugins": [
+    [
+      "../../../../src",
+      {
+        "mappings": [
+          {
+            "prefix": "source",
+            "targetName": "targetName"
+          },
+          {
+            "prefix": "src-"
+          }
+        ]
+      }
+    ]
+  ]
+}

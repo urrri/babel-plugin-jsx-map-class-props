@@ -1,0 +1,95 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "typeof": "function"
+        }
+      ]
+    },
+    "clean": {
+      "type": "boolean"
+    },
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "typeof": "function"
+              }
+            ]
+          },
+          "clean": {
+            "type": "boolean"
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "targetName": {
+            "type": "string"
+          },
+          "sourceMask": {
+            "type": "string",
+            "format": "regex"
+          },
+          "targetMask": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "function"
+              }
+            ]
+          },
+          "prefix": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "targetMask": [
+            "sourceMask"
+          ]
+        },
+        "oneOf": [
+          {
+            "required": [
+              "sourceName",
+              "targetName"
+            ]
+          },
+          {
+            "required": [
+              "sourceMask",
+              "targetName"
+            ]
+          },
+          {
+            "required": [
+              "sourceMask",
+              "targetMask"
+            ]
+          },
+          {
+            "required": [
+              "prefix"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "type": "object"
+}

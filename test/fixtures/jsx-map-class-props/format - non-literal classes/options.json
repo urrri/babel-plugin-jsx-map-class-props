@@ -1,0 +1,25 @@
+{
+  "plugins": [
+    [
+      "../../../../src",
+      {
+        "mappings": [
+          {
+            "sourceName": "formatName",
+            "targetName": "className",
+            "format": "e2e-[local]"
+          },
+          {
+            "sourceName": "noFormatName",
+            "targetName": "className"
+          },
+          {
+            "sourceName": "complexFormatName",
+            "targetName": "className",
+            "format": "[folder]_[file]_[local]_[hash:base64:8]"
+          }
+        ]
+      }
+    ]
+  ]
+}
