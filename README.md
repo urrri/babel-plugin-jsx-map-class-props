@@ -1,0 +1,1 @@
+# babel-plugin-jsx-map-class-props
