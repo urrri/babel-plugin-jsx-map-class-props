@@ -18,15 +18,62 @@ ajvKeywords(ajv);
 
 // const validate = ajv.compile(optionsSchema);
 
+const matchTargetName = (mapping, sourceName) => {
+  if (mapping.targetName) {
+    return mapping.targetName;
+  } else if (mapping.sourceMask && sourceName.match(mapping.sourceMask) && mapping.targetMask) {
+    return sourceName.replace(mapping.sourceMask, mapping.targetMask);
+  } else if (mapping.prefix && sourceName.startsWith(mapping.prefix)) {
+    return sourceName.substr(mapping.prefix.length);
+  }
+
+  return undefined;
+};
+
+const isMappingMatchAttr = (mapping, attrName) =>
+    (mapping.sourceName && mapping.sourceName === attrName) ||
+    (mapping.sourceMask && attrName.match(mapping.sourceMask)) ||
+    (mapping.prefix && attrName.startsWith(mapping.prefix));
+
+const collectTaskParams = (mapping, sourceName) => {
+  if (!mapping) {
+    return undefined;
+  }
+  if (mapping.clean) {
+    return {clean: true};
+  }
+  const targetName = matchTargetName(mapping, sourceName);
+
+  return targetName ? {
+    format: mapping.format,
+    targetName,
+    clean: mapping.clean
+  } : undefined;
+};
+
+const preformat = (format, fileName) => {
+  if (!format) {
+    return undefined;
+  }
+  const formatter = (typeof format === 'function') ? format : genericNames(format, {
+    context: process.cwd()
+  });
+  const placeholder = 'a__________z';
+
+  const res = formatter(placeholder, fileName);
+
+  return res.replace(new RegExp(placeholder, 'g'), '|');
+};
+
 export default ({types: t}: { types: BabelTypes }) => {
 
   const filenameMap = {};
 
-  const setupFileForImport = (path, filename) => {
+  const setupFileForImport = (path, importFileName) => {
     const programPath = path.isProgram() ? path : path.findParent(parentPath => parentPath.isProgram());
 
-    const identifier = programPath.scope.generateUidIdentifier(filename);
-    const filePath = 'babel-plugin-jsx-map-class-props/dist/browser/' + filename;
+    const identifier = programPath.scope.generateUidIdentifier(importFileName);
+    const filePath = 'babel-plugin-jsx-map-class-props/dist/browser/' + importFileName;
 
     programPath.unshiftContainer(
         'body',
@@ -43,20 +90,12 @@ export default ({types: t}: { types: BabelTypes }) => {
     return identifier;
   };
 
-  const setupFileForRuntimeFormat = (path, filename) => {
-    if (!filenameMap[filename].importedFormatterIndentifier) {
-      filenameMap[filename].importedFormatterIndentifier = setupFileForImport(path, 'getClassName');
+  const setupImportFor = (path, importFileName, contextFileInfo) => {
+    if (!contextFileInfo[importFileName]) {
+      contextFileInfo[importFileName] = setupFileForImport(path, importFileName);
     }
 
-    return filenameMap[filename].importedFormatterIndentifier;
-  };
-
-  const setupFileForRuntimeJoin = (path, filename) => {
-    if (!filenameMap[filename].importedJoinerIndentifier) {
-      filenameMap[filename].importedJoinerIndentifier = setupFileForImport(path, 'joinClassNames');
-    }
-
-    return filenameMap[filename].importedJoinerIndentifier;
+    return contextFileInfo[importFileName];
   };
 
   return {
@@ -68,53 +107,20 @@ export default ({types: t}: { types: BabelTypes }) => {
           return;
         }
 
-        const matchTargetName = (mapping, sourceName) => {
-          if (mapping.targetName) {
-            return mapping.targetName;
-          } else if (mapping.sourceMask && sourceName.match(mapping.sourceMask) && mapping.targetMask) {
-            return sourceName.replace(mapping.sourceMask, mapping.targetMask);
-          } else if (mapping.prefix && sourceName.startsWith(mapping.prefix)) {
-            return sourceName.substr(mapping.prefix.length);
-          }
+        const {filename} = stats.file.opts;
 
-          return undefined;
-        };
+        const options = stats.opts;
 
-        const collectTaskParams = (mapping, sourceName) => {
-          if (!mapping) {
-            return undefined;
-          }
-          if (mapping.clean) {
-            return {clean: true};
-          }
-          const targetName = matchTargetName(mapping, sourceName);
-
-          return targetName ? {
-            format: mapping.format === undefined ? stats.opts.format : mapping.format,
-            targetName,
-            clean: mapping.clean
-          } : undefined;
-        };
-
-        const isMatch = (mapping, name) =>
-            (mapping.sourceName && mapping.sourceName === name) ||
-            (mapping.sourceMask && name.match(mapping.sourceMask)) ||
-            (mapping.prefix && name.startsWith(mapping.prefix));
-
-        const filename = stats.file.opts.filename;
-
-        const mappings = stats.opts.mappings;
-
-        const attributes = path.node.openingElement.attributes;
+        const {attributes} = path.node.openingElement;
 
         const tasks = attributes.reduce((acc, attr) => {
 
           if (attr.name) {
-            const name = attr.name.name;
+            const attrName = attr.name.name;
 
-            const mapping = mappings.find(mapping_ => isMatch(mapping_, name));
+            const mapping = options.mappings.find(mapping_ => isMappingMatchAttr(mapping_, attrName));
 
-            const task = collectTaskParams(mapping, name);
+            const task = collectTaskParams(mapping, attrName);
 
             if (task) {
               task.attribute = attr;
@@ -130,56 +136,47 @@ export default ({types: t}: { types: BabelTypes }) => {
           return;
         }
 
-        const preformat = (format, fileName) => {
-          if (!format) {
-            return undefined;
-          }
-          const formatter = (typeof format === 'function') ? format : genericNames(format, {
-            context: process.cwd()
-          });
-          const placeholder = 'a__________z';
-
-          const res = formatter(placeholder, fileName);
-
-          return res.replace(new RegExp(placeholder, 'g'), '|');
-        };
-
         // perform tasks
-        for (const {attribute, clean, targetName, format: fmt} of tasks) {
+        const performTasks = () => {
+          for (const {attribute, clean, targetName, format: fmt} of tasks) {
 
-          if (clean || (stats.opts.clean && clean !== false)) {
-            attributes.splice(attributes.indexOf(attribute), 1);
+            if (clean || (options.clean && clean !== false)) {
+              attributes.splice(attributes.indexOf(attribute), 1);
 
-          } else {
+            } else {
 
-            const format = preformat(fmt === undefined ? stats.opts.format : fmt, filename);
+              const format = preformat(fmt === undefined ? options.format : fmt, filename);
+              const contextFileInfo = filenameMap[filename];
 
-            if (t.isStringLiteral(attribute.value)) {
+              if (t.isStringLiteral(attribute.value)) {
 
-              mergeStringLiteralAttribute(
-                  t,
-                  path,
-                  attribute,
-                  targetName,
-                  filenameMap[filename].getJoinerIdentifier,
-                  format
-              );
+                mergeStringLiteralAttribute(
+                    t,
+                    path,
+                    attribute,
+                    targetName,
+                    contextFileInfo.getJoinerIdentifier,
+                    format
+                );
 
-            } else if (t.isJSXExpressionContainer(attribute.value)) {
+              } else if (t.isJSXExpressionContainer(attribute.value)) {
 
-              mergeJsxExpressionAttribute(
-                  t,
-                  path,
-                  attribute,
-                  targetName,
-                  filenameMap[filename].getFormatterIdentifier,
-                  filenameMap[filename].getJoinerIdentifier,
-                  format
-              );
+                mergeJsxExpressionAttribute(
+                    t,
+                    path,
+                    attribute,
+                    targetName,
+                    contextFileInfo.getFormatterIdentifier,
+                    contextFileInfo.getJoinerIdentifier,
+                    format
+                );
 
+              }
             }
           }
-        }
+        };
+
+        performTasks();
       },
       Program(path: *, stats: *): void {
 
@@ -199,8 +196,10 @@ export default ({types: t}: { types: BabelTypes }) => {
         const filename = stats.file.opts.filename;
 
         filenameMap[filename] = {
-          getFormatterIdentifier: () => setupFileForRuntimeFormat(path, filename),
-          getJoinerIdentifier: () => setupFileForRuntimeJoin(path, filename)
+          getFormatterIdentifier:
+              () => setupImportFor(path, 'getClassName', filenameMap[filename]),
+          getJoinerIdentifier:
+              () => setupImportFor(path, 'joinClassNames', filenameMap[filename])
         };
       }
     }
