@@ -8,11 +8,11 @@ Merges class names from any attribute with `className` or other compatible attri
 
 * [Installation](#installation)
 * [Why?](#why)
-* [How does it work?](#how-does-it-work)
 * [Configuration](#configuration)
   * [Options](#options)
   * [Attribute Mapping Options](#attribute-mapping-options)
   * [Allowed combination of source-target options](#allowed-combinations-of-source-target-options)
+* [How does it work?](#how-does-it-work)
 * [Runtime attribute value formatting and merging](#runtime-attribute-value-formatting-and-merging)
 * [Have a question or want to suggest an improvement?](#have-a-question-or-want-to-suggest-an-improvement)
 
