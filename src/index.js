@@ -45,18 +45,17 @@ const collectTaskParams = (mapping, sourceName) => {
   const targetName = matchTargetName(mapping, sourceName);
 
   return targetName ? {
-    format: mapping.format,
-    targetName,
-    clean: mapping.clean
+    ...mapping,
+    targetName
   } : undefined;
 };
 
-const preformat = (format, fileName) => {
+const preformat = (format, fileName, context) => {
   if (!format) {
     return undefined;
   }
   const formatter = (typeof format === 'function') ? format : genericNames(format, {
-    context: process.cwd()
+    context: context || process.cwd()
   });
   const placeholder = 'a__________z';
 
@@ -145,7 +144,7 @@ export default ({types: t}: { types: BabelTypes }) => {
 
             } else {
 
-              const format = preformat(fmt === undefined ? options.format : fmt, filename);
+              const format = preformat(fmt === undefined ? options.format : fmt, filename, options.context);
               const contextFileInfo = filenameMap[filename];
 
               if (t.isJSXExpressionContainer(attribute.value) && t.isStringLiteral(attribute.value.expression)) {

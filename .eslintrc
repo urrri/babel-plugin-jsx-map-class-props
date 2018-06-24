@@ -17,6 +17,9 @@
     "space-before-function-paren": [
       0
     ],
+    "import/no-namespace": 0,
+    "object-property-newline": 0,
+    "no-loop-func": 0,
     "no-implicit-coercion": [
       0
     ],
@@ -33,7 +36,7 @@
       "as-needed"
     ],
     "arrow-body-style": [
-      1,
+      0,
       "as-needed"
     ],
     "line-comment-position": 0,
@@ -41,6 +44,11 @@
     "no-extra-parens": 0,
     "no-console": 1,
     "babel/object-curly-spacing": 0,
+    "no-restricted-syntax": [
+      0,
+      "TemplateLiteral"
+    ],
+    "no-param-reassign": 0,
     "no-unused-vars": "warn"
   }
 }
