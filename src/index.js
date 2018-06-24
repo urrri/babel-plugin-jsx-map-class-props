@@ -8,6 +8,7 @@ import genericNames from 'generic-names';
 // import optionsSchema from './schemas/optionsSchema.json';
 import mergeStringLiteralAttribute from './mergeStringLiteral';
 import mergeJsxExpressionAttribute from './mergeJsxExpression';
+import { appendOutVars, cleanupInFile, getOutVars, saveOutFiles } from './outFileTools';
 
 const ajv = new Ajv({
   // eslint-disable-next-line id-match
@@ -15,7 +16,6 @@ const ajv = new Ajv({
 });
 
 ajvKeywords(ajv);
-
 // const validate = ajv.compile(optionsSchema);
 
 const matchTargetName = (mapping, sourceName) => {
@@ -45,18 +45,17 @@ const collectTaskParams = (mapping, sourceName) => {
   const targetName = matchTargetName(mapping, sourceName);
 
   return targetName ? {
-    format: mapping.format,
-    targetName,
-    clean: mapping.clean
+    ...mapping,
+    targetName
   } : undefined;
 };
 
-const preformat = (format, fileName) => {
+const preformat = (format, fileName, context) => {
   if (!format) {
     return undefined;
   }
   const formatter = (typeof format === 'function') ? format : genericNames(format, {
-    context: process.cwd()
+    context: context || process.cwd()
   });
   const placeholder = 'a__________z';
 
@@ -68,6 +67,25 @@ const preformat = (format, fileName) => {
 export default ({types: t}: { types: BabelTypes }) => {
 
   const filenameMap = {};
+  const output = {
+    count: 0,
+    outFiles: {
+      // outName: {
+      //   inFiles: {
+      //     inputName: {
+      //       items: [
+      //         {
+      //           origValue: 'string',
+      //           formattedValue: 'string'
+      //         }
+      //       ]
+      //     }
+      //   },
+      //   dirty: false,
+      //   options: {}
+      // }
+    }
+  };
 
   const setupFileForImport = (path, importFileName) => {
     const programPath = path.isProgram() ? path : path.findParent(parentPath => parentPath.isProgram());
@@ -100,9 +118,28 @@ export default ({types: t}: { types: BabelTypes }) => {
 
   return {
     inherits: babelPluginJsxSyntax,
+    pre(file) {
+      const {filename} = file.opts;
+
+      const {outFiles, timer} = output;
+
+      clearTimeout(timer);
+
+      cleanupInFile(outFiles, filename);
+    },
+    post() {
+      // console.log('<<<', Object.keys(filenameMap).length);
+      output.count++;
+      output.timer = setTimeout(() => {
+        // console.log('XXX', Object.keys(filenameMap).length, output.count);
+        output.count = 0;
+        const {outFiles} = output;
+
+        saveOutFiles(outFiles);
+      }, output.count > 10 ? 3000 : 1000);
+    },
     visitor: {
       JSXElement(path: *, stats: *): void {
-
         if (!stats.opts || !stats.opts.mappings) {
           return;
         }
@@ -138,17 +175,23 @@ export default ({types: t}: { types: BabelTypes }) => {
 
         // perform tasks
         const performTasks = () => {
-          for (const {attribute, clean, targetName, format: fmt} of tasks) {
+          for (const {attribute, clean, targetName, format: fmt, ...opts} of tasks) {
 
             if (clean || (options.clean && clean !== false)) {
               attributes.splice(attributes.indexOf(attribute), 1);
 
             } else {
 
-              const format = preformat(fmt === undefined ? options.format : fmt, filename);
+              const format = preformat(fmt === undefined ? options.format : fmt, filename, options.context);
+              const outName = opts.outName || options.outName;
               const contextFileInfo = filenameMap[filename];
 
               if (t.isStringLiteral(attribute.value)) {
+                const sourceValue = attribute.value.value;
+
+                // console.log('>>>', filename, sourceValue, Object.keys(filenameMap).length);
+
+                appendOutVars(output.outFiles, outName, options, filename, getOutVars(sourceValue, format));
 
                 mergeStringLiteralAttribute(
                     t,
