@@ -16,7 +16,7 @@
           {
             "sourceName": "complexFormatName",
             "targetName": "className",
-            "format": "[folder]_[file]_[local]_[hash:base64:8]"
+            "format": "[folder]_[name]_[local]_[hash:base64:8]"
           }
         ]
       }
