@@ -6,7 +6,7 @@ const x = <div>
 
   <div targetName={_joinClassNames(c, "a")} />
 
-  <div targetName={_joinClassNames("c ", a)} />
+  <div targetName={_joinClassNames("c", a)} />
 
   <div targetName={_joinClassNames(c, a)} />
 
@@ -17,5 +17,7 @@ const x = <div>
   <div targetName={_joinClassNames(_joinClassNames(c, a), "b")} />
 
   <div targetName={_joinClassNames(_joinClassNames(c, "a"), "b")} />
+
+  <div targetName="c a b" />
 
 </div>;

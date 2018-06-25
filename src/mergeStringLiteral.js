@@ -27,6 +27,10 @@ export default (
 
   if (targetAttribute) {
 
+    if (isJSXExpressionContainer(targetAttribute.value) && isStringLiteral(targetAttribute.value.expression)) {
+      targetAttribute.value = targetAttribute.value.expression;
+    }
+
     if (isStringLiteral(targetAttribute.value)) {
 
       targetAttribute.value.value = joinClassNames(targetAttribute.value.value, formattedClassName);

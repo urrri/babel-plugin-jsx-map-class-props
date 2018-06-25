@@ -6,5 +6,6 @@ const x = <div>
   <div complexFormatName='ccc'/>
   <div noFormatName='eee'/>
   <div formatName='xxx' className='yyy'/>
+  <div formatName={'xxx'} className={'yyy'}/>
 
 </div>;
