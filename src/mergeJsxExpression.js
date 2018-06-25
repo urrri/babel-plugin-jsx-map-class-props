@@ -49,7 +49,7 @@ export default (
               t.callExpression(
                   t.clone(getJoinerIdentifier()),
                   [
-                    t.stringLiteral(targetAttribute.value.value + ' '),
+                    targetAttribute.value,
                     targetExpression
                   ]
               )
