@@ -186,6 +186,10 @@ export default ({types: t}: { types: BabelTypes }) => {
               const outName = opts.outName || options.outName;
               const contextFileInfo = filenameMap[filename];
 
+              if (t.isJSXExpressionContainer(attribute.value) && t.isStringLiteral(attribute.value.expression)) {
+                attribute.value = attribute.value.expression;
+              }
+
               if (t.isStringLiteral(attribute.value)) {
                 const sourceValue = attribute.value.value;
 
