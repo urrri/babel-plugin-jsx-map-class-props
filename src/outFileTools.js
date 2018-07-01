@@ -1,15 +1,18 @@
+import fs from 'fs';
 import genericNames from 'generic-names/index';
 import camelCase from 'lodash/camelCase';
 import snakeCase from 'lodash/snakeCase';
-import getClassName, { formatName } from './helpers/getClassName';
+import { formatName } from './helpers/getClassName';
 
 /*
 options:{
   outFiles:{
-    outName: 'path',
-    format: 'json'|'js'|unction(groups, options){}
+    name: 'path',
+    format: 'json'|'js'|function(groups, options){}
     flat: false,
-    case: 'camel'|'upper'
+    case: 'camel'|'upper',
+    varFormat: 'string',
+    groupFormat: 'string'
   }
 }
  */
@@ -42,7 +45,7 @@ export const getOutVars = (values, format) => {
   }
 
   return origValues.map(origValue => ({
-    origValue: camelCase(origValue),
+    origValue,
     formattedValue: format ? formatName(origValue, format) : origValue
   }));
 };
@@ -85,8 +88,9 @@ export const appendOutVars = (outFiles, outName, options, inName, valuePairs) =>
 };
 
 const saveFile = (fileName, content) => {
-  // todo
-  console.log(fileName, '\n', content);
+  content += '\n';
+//  console.log(fileName, '\n', content);
+  fs.writeFileSync(fileName, content, 'utf8');
 };
 
 const formatJsonGroups = (groups, options) => {
@@ -115,7 +119,7 @@ const formatVarGroup = ({name, items}, options) => {
 
   return options.flat ?
          res.join('\n') :
-         'export const ' + name + ' = {\n' + res.join('\n') + ',\n};\n';
+         'export const ' + name + ' = {\n' + res.join(',\n') + '\n};';
 };
 
 const formatVarGroups = (groups, options) => {
@@ -128,10 +132,10 @@ const formatVarGroups = (groups, options) => {
     return formatJsonGroups(groups, options);
   }
 
-  return '/* eslint-disable */\n\n' + res.join('\n\n');
+  return res.join('\n\n');
 };
 
-const formatVarName = varCase => {
+const formatByCase = varCase => {
   if (varCase === 'upper') {
     return name => snakeCase(name).toUpperCase();
   } else {
@@ -140,13 +144,16 @@ const formatVarName = varCase => {
   }
 };
 
-const getGroupName = (inName, varCase, context) => {
-  const formatter = genericNames('[path]-[name]', {
+const getGroupName = (inName, {case: varCase, flat, groupFormat = '[path]-[name]'} = {}, context) => {
+  if (flat) {
+    return '';
+  }
+  const formatter = genericNames(groupFormat, {
     context: context || process.cwd()
   });
   const res = formatter('', inName);
 
-  return formatVarName(varCase)(res);
+  return formatByCase(varCase)(res);
 };
 
 const filterUniqueItems = (items, inName) => {
@@ -169,12 +176,15 @@ const filterUniqueItems = (items, inName) => {
   });
 };
 
-const formatVarNames = (items, varCase) => {
-  if (varCase && varCase !== 'camel') {
-    const format = formatVarName(varCase);
+const formatVarNames = (items, inName, {case: varCase = 'camel', varFormat} = {}, context) => {
 
-    items = items.map(item => ({...item, origValue: format(item.origValue)}));
-  }
+  const formatter = varFormat ? genericNames(varFormat, {
+    context: context || process.cwd()
+  }) : _ => _;
+
+  const caseFormatter = formatByCase(varCase);
+
+  items = items.map(item => ({...item, origValue: caseFormatter(formatter(item.origValue, inName))}));
 
   return items;
 };
@@ -204,10 +214,10 @@ export const saveOutFile = outFile => {
       const inFile = inFiles[inName];
 
       if (inFile && inFile.items) {
-        const items = formatVarNames(inFile.items, options.case);
+        const items = formatVarNames(inFile.items, inName, options, inFile.context);
 
         varGroups.push(
-            {items: filterUniqueItems(items, inName), name: getGroupName(inName, options.case, inFile.context)});
+            {items: filterUniqueItems(items, inName), name: getGroupName(inName, options, inFile.context)});
       }
     }
   }

@@ -183,7 +183,7 @@ export default ({types: t}: { types: BabelTypes }) => {
             } else {
 
               const format = preformat(fmt === undefined ? options.format : fmt, filename, options.context);
-              const outName = opts.outName || options.outName;
+              const outName = opts.outFileName || options.outFileName;
               const contextFileInfo = filenameMap[filename];
 
               if (t.isJSXExpressionContainer(attribute.value) && t.isStringLiteral(attribute.value.expression)) {
