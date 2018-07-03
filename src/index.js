@@ -5,7 +5,7 @@ import BabelTypes from 'babel-types';
 import ajvKeywords from 'ajv-keywords';
 import Ajv from 'ajv';
 import genericNames from 'generic-names';
-// import optionsSchema from './schemas/optionsSchema.json';
+import optionsSchema from './schemas/optionsSchema.json';
 import mergeStringLiteralAttribute from './mergeStringLiteral';
 import mergeJsxExpressionAttribute from './mergeJsxExpression';
 import { appendOutVars, cleanupInFile, getOutVars, saveOutFiles } from './outFileTools';
@@ -16,7 +16,7 @@ const ajv = new Ajv({
 });
 
 ajvKeywords(ajv);
-// const validate = ajv.compile(optionsSchema);
+const validate = ajv.compile(optionsSchema);
 
 const matchTargetName = (mapping, sourceName) => {
   if (mapping.targetName) {
@@ -227,12 +227,12 @@ export default ({types: t}: { types: BabelTypes }) => {
       },
       Program(path: *, stats: *): void {
 
-        // if (!validate(stats.opts)) {
-        //   // eslint-disable-next-line no-console
-        //   console.error(validate.errors);
-        //
-        //   throw new Error('Invalid configuration');
-        // }
+        if (!validate(stats.opts)) {
+          // eslint-disable-next-line no-console
+          console.error(validate.errors);
+
+          throw new Error('Invalid configuration');
+        }
 
         stats.opts.mappings.forEach(mapping => {
           if (mapping.sourceMask && typeof mapping.sourceMask === 'string') {
