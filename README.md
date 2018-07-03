@@ -16,6 +16,7 @@ Merges class names from any attribute with `className` or other compatible attri
 * [How does it work?](#how-does-it-work)
 * [Runtime attribute value formatting and merging](#runtime-attribute-value-formatting-and-merging)
 * [Saving mapped class names in the file](#saving-mapped-class-names-in-the-file)
+    * [Custom out file format](#custom-out-file-format)
 * [Have a question or want to suggest an improvement?](#have-a-question-or-want-to-suggest-an-improvement)
 
 ## Installation
@@ -82,7 +83,7 @@ Configure the options for the plugin within your `.babelrc` as follows:
 |`prefix`| `targetName`| match attribute by `prefix`, merge with `targetName` attribute|
 |`prefix`| | match attribute by `prefix`, get target by stripping prefix, merge with target attribute|
 
-> Notes:
+> **Notes**:
 > - only one combination per mapping is allowed
 > - other options will be ignored (according to priority)
 > - if attribute is matched by a mapping, other mappings are ignored 
@@ -92,11 +93,11 @@ Configure the options for the plugin within your `.babelrc` as follows:
 |Name|Type|Description|Default|
 |---|---|---|---|
 |`name`|`string`|Name of the file that should match `outFileName` option value.||
-|`format`|`?('js'ǀ'json'ǀfunction)`|Format of the out file content or function for the custom file formatting.<br> Function receives parameters: array of items `groups` and output file `options`|`'js'`|
+|`format`|`?('js'ǀ'json'ǀfunction)`|Format of the out file content or `function` for the [custom file formatting](#custom-out-file-format).|`'js'`|
 |`flat`|`?boolean`|If `true`, merges all groups together to a flat list.  |`false`|
 |`varFormat`|`?string`|Pattern for variable names formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).  ||
 |`groupFormat`|`?string`|Pattern for variable group names formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename). *Ignored if `flat` option is `true`* |`'[path]-[name]'`|
-|`case`|`?('camel'ǀ'upper')`|Post-processes variable name and changes case as following: <ul><li>`camel` - *theVarName*</li><li>`upper` - *THE_VAR_NAME*</li></ul> _Note: any non-alphanumeric character will be compacted_ |`'camel'`|
+|`case`|`?('camel'ǀ'upper')`|Post-processes variable name and changes case as following: <ul><li>`camel` - *theVarName*</li><li>`upper` - *THE_VAR_NAME*</li></ul> _**Note**: any non-alphanumeric character will be compacted_ |`'camel'`|
 
 Missing a configuration? [Raise an issue](https://github.com/urrri/babel-plugin-jsx-map-class-props/issues/new?title=New%20configuration:).
 
@@ -161,7 +162,36 @@ import _joinClassNames from 'babel-plugin-jsx-map-class-props/dist/browser/joinC
 
 ## Saving mapped class names in the file
 
-To simplify using mapped class names in e.g. tests, there can be defined output file(s) into which the plugin will put constants, matching appropriated class names. The output file can have JavaScript, JSON or custom format (`format` option). The constants can be grouped by the input files or be presented as a flat list (`flat` option). Group names and constant names can be decorated with [scoped name pattern](https://github.com/webpack/loader-utils#interpolatename) (`groupFormat`, `varFormat` options). Then names will be compacted and converted to camelCase or UPPER_SNAKE_CASE format (`case` option). All non-alphanumeric characters will be removed (including $ sign).
+To simplify using mapped class names in e.g. tests, there can be defined output file(s) (`outFileName` option) into which the plugin will put constants, matching appropriated class names. The output file can have JavaScript, JSON or [custom](#custom-out-file-format) format (`format` option). The constants can be grouped by the input files or be presented as a flat list (`flat` option). Group names and constant names can be decorated with [scoped name pattern](https://github.com/webpack/loader-utils#interpolatename) (`groupFormat`, `varFormat` options). Then names will be compacted and converted to camelCase or UPPER_SNAKE_CASE format (`case` option). All non-alphanumeric characters will be removed (including $ sign).
+
+>**Note**: only classes defined with string literals will be saved into the out files.<br> Classes defined as expressions or using the Spread operator (...) can be resolved at runtime only.  
+
+### Custom out file format
+
+`format` option of an out file can be defined as a `function` with the following arguments:
+* `groups` - preprocessed (filtered and formatted) array of groups of constants:
+    ```js
+    [
+        // group
+        {
+            // group identifier, formatted using options.groupFormat and options.case 
+            // (undefined, if options.flat === true)
+            name: 'string', 
+            items: [
+                // constant
+                {
+                    // identifier, formatted using options.varFormat and options.case 
+                    name: 'string',
+                    // formatted (final) class name
+                    value: 'string'
+                }
+            ]
+        }
+    ]
+    ```
+* `options` - out file options (read only)
+
+The function should return a `string` that represents the custom content ready to be saved in the out file.
 
 ## Have a question or want to suggest an improvement?
 

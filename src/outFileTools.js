@@ -75,6 +75,9 @@ export const appendOutVars = (outFiles, outName, options, inName, valuePairs) =>
 };
 
 const saveFile = (fileName, content) => {
+  if (!fileName || !content) {
+    return;
+  }
   content += '\n';
   fs.writeFileSync(fileName, content, 'utf8');
 };
@@ -110,7 +113,7 @@ const formatVarGroup = ({name, items}, options) => {
 
 const formatVarGroups = (groups, options) => {
   if (typeof options.format === 'function') {
-    return options.format(groups, options);
+    return options.format(groups, {...options});
   }
   if (options.format === 'json') {
     return formatJsonGroups(groups, options);
