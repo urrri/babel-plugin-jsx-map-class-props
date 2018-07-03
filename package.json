@@ -34,17 +34,18 @@
     "trash-cli": "^1.4.0"
   },
   "engines": {
-    "node": ">4.0.0"
+    "node": ">=5.10"
   },
   "keywords": [
-    "babel-plugin"
+    "babel-plugin",
+    "jsx"
   ],
   "license": "MIT",
   "main": "dist/index.js",
   "name": "babel-plugin-jsx-map-class-props",
   "repository": {
     "type": "git",
-    "url": "https://github.com/urrri/babel-plugin-jsx-map-class-props"
+    "url": "https://github.com/urrri/babel-plugin-jsx-map-class-props.git"
   },
   "scripts": {
     "build": "trash ./dist && cross-env NODE_ENV=production babel ./src --out-dir ./dist --source-maps --copy-files && npm run build-helper",
