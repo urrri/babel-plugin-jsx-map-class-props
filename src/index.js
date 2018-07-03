@@ -8,6 +8,7 @@ import genericNames from 'generic-names';
 import optionsSchema from './schemas/optionsSchema.json';
 import mergeStringLiteralAttribute from './mergeStringLiteral';
 import mergeJsxExpressionAttribute from './mergeJsxExpression';
+import { appendOutVars, cleanupInFile, getOutVars, saveOutFiles } from './outFileTools';
 
 const ajv = new Ajv({
   // eslint-disable-next-line id-match
@@ -66,6 +67,10 @@ const preformat = (format, fileName, context) => {
 export default ({types: t}: { types: BabelTypes }) => {
 
   const filenameMap = {};
+  const output = {
+    count: 0,
+    outFiles: {}
+  };
 
   const setupFileForImport = (path, importFileName) => {
     const programPath = path.isProgram() ? path : path.findParent(parentPath => parentPath.isProgram());
@@ -98,9 +103,26 @@ export default ({types: t}: { types: BabelTypes }) => {
 
   return {
     inherits: babelPluginJsxSyntax,
+    pre(file) {
+      const {filename} = file.opts;
+
+      const {outFiles, timer} = output;
+
+      clearTimeout(timer);
+
+      cleanupInFile(outFiles, filename);
+    },
+    post() {
+      output.count++;
+      output.timer = setTimeout(() => {
+        output.count = 0;
+        const {outFiles} = output;
+
+        saveOutFiles(outFiles);
+      }, output.count > 10 ? 3000 : 1000);
+    },
     visitor: {
       JSXElement(path: *, stats: *): void {
-
         if (!stats.opts || !stats.opts.mappings) {
           return;
         }
@@ -136,7 +158,7 @@ export default ({types: t}: { types: BabelTypes }) => {
 
         // perform tasks
         const performTasks = () => {
-          for (const {attribute, clean, targetName, format: fmt} of tasks) {
+          for (const {attribute, clean, targetName, format: fmt, outFileName} of tasks) {
 
             if (clean || (options.clean && clean !== false)) {
               attributes.splice(attributes.indexOf(attribute), 1);
@@ -144,6 +166,7 @@ export default ({types: t}: { types: BabelTypes }) => {
             } else {
 
               const format = preformat(fmt === undefined ? options.format : fmt, filename, options.context);
+              const outName = outFileName || options.outFileName;
               const contextFileInfo = filenameMap[filename];
 
               if (t.isJSXExpressionContainer(attribute.value) && t.isStringLiteral(attribute.value.expression)) {
@@ -151,6 +174,9 @@ export default ({types: t}: { types: BabelTypes }) => {
               }
 
               if (t.isStringLiteral(attribute.value)) {
+                const sourceValue = attribute.value.value;
+
+                appendOutVars(output.outFiles, outName, options, filename, getOutVars(sourceValue, format));
 
                 mergeStringLiteralAttribute(
                     t,
