@@ -39,6 +39,9 @@
           "clean": {
             "type": "boolean"
           },
+          "outFileName": {
+            "type": "string"
+          },
           "sourceName": {
             "type": "string"
           },
@@ -99,6 +102,57 @@
               "prefix"
             ]
           }
+        ]
+      }
+    },
+    "outFileName": {
+      "type": "string"
+    },
+    "outFiles": {
+      "type": "array",
+      "minItems": 1,
+      "additionalItems": false,
+      "uniqueItemProperties": [
+        "name"
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "format": {
+            "oneOf": [
+              {
+                "enum": [
+                  "js",
+                  "json"
+                ]
+              },
+              {
+                "typeof": "function"
+              }
+            ]
+          },
+          "flat": {
+            "type": "boolean"
+          },
+          "case": {
+            "enum": [
+              "camel",
+              "upper"
+            ]
+          },
+          "varFormat": {
+            "type": "string"
+          },
+          "groupFormat": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ]
       }
     }
