@@ -50,7 +50,8 @@ Configure the options for the plugin within your `.babelrc` as follows:
 
 |Name|Type|Description|Default|
 |---|---|---|---|
-|`format`|`?GenerateScopedNameConfigurationType`|Global pattern for class names formatting. Can be overridden by mapping option. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).|`none`|
+|`context`|`?string`|[Scoped names](https://github.com/webpack/loader-utils#interpolatename) will be calculated relative to this path. |`process.cwd()`|
+|`format`|`?GenerateScopedNameConfigurationType`|Global pattern for class names formatting. Can be overridden by mapping option. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).|*none*|
 |`clean`|`?boolean`|Removes all matching props. This option can be used for removing debug/test classNames from production build. Can be overridden by mapping option. Ignored if false |`false`|
 |`mappings`|`AttributeMappingType []`|Array of attribute mapping options|`[]`|
 
