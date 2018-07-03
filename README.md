@@ -11,9 +11,11 @@ Merges class names from any attribute with `className` or other compatible attri
 * [Configuration](#configuration)
   * [Options](#options)
   * [Attribute Mapping Options](#attribute-mapping-options)
-  * [Allowed combination of source-target options](#allowed-combinations-of-source-target-options)
+    * [Allowed combination of source-target options](#allowed-combinations-of-source-target-options)
+  * [Out File Options](#out-file-options)
 * [How does it work?](#how-does-it-work)
 * [Runtime attribute value formatting and merging](#runtime-attribute-value-formatting-and-merging)
+* [Saving mapped class names in the file](#saving-mapped-class-names-in-the-file)
 * [Have a question or want to suggest an improvement?](#have-a-question-or-want-to-suggest-an-improvement)
 
 ## Installation
@@ -50,24 +52,26 @@ Configure the options for the plugin within your `.babelrc` as follows:
 
 |Name|Type|Description|Default|
 |---|---|---|---|
-|`format`|`?GenerateScopedNameConfigurationType`|Global pattern for class names formatting. Can be overridden by mapping option. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).|`none`|
+|`context`|`?string`|[Scoped names](https://github.com/webpack/loader-utils#interpolatename) will be calculated relative to this path. |`process.cwd()`|
+|`format`|`?GenerateScopedNameConfigurationType`|Global pattern for class names formatting. Can be overridden by mapping option. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).|*none*|
 |`clean`|`?boolean`|Removes all matching props. This option can be used for removing debug/test classNames from production build. Can be overridden by mapping option. Ignored if false |`false`|
 |`mappings`|`AttributeMappingType []`|Array of attribute mapping options|`[]`|
+|`outFileName`|`?string`|File name, relative to the [CWD](https://nodejs.org/docs/latest/api/process.html#process_process_cwd) of Babel. Allows to [save mapped class names in the file](#saving-mapped-class-names-in-the-file). Can be overridden by mapping option. ||
+|`outFiles`|`?OutFileType[]`|[Additional options](#out-file-options) for the output files defined by the `outFileName` options. ||
 
 ### Attribute Mapping Options
 |Name|Type|Description|Default|
 |---|---|---|---|
-|`format`|`?GenerateScopedNameConfigurationType`|Pattern for class names formatting. Can override global option. Set `null` to prevent formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).  |`none`|
-|`clean`|`?boolean`|Removes all matching props. This option can be used for removing debug/test classNames from production build. Can override global option by being set to `false` explicitly.|`none`|
+|`format`|`?GenerateScopedNameConfigurationType`|Pattern for class names formatting. Can override global option. Set `null` to prevent formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).  |*none*|
+|`clean`|`?boolean`|Removes all matching props. This option can be used for removing debug/test classNames from production build. Can override global option by being set to `false` explicitly.|*none*|
 |`sourceName`|`?string`|Name of an attribute to be matched.||
 |`sourceMask`|`?string`|[RegExp pattern string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp) to find matching attributes. ||
 |`prefix`|`?string`|String to find matching attributes by prefix. Target attribute's name will be calculated by removing prefix, if other options not specified.||
 |`targetName`|`?string`|Name of the attribute the value will be merged with. This option has the highest priority for target calculation. Can be used with any source option.||
 |`targetMask`|`?string, ?function`|Second parameter of [`String.replace`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace). Can only be used with `sourceMask`, which will be used as a first parameter. Allows to calculate attribute name to merge value with.||
+|`outFileName`|`?string`|File name, relative to the [CWD](https://nodejs.org/docs/latest/api/process.html#process_process_cwd) of Babel. Allows to [save mapped class names in the file](#saving-mapped-class-names-in-the-file). Can override global option.||
 
-Missing a configuration? [Raise an issue](https://github.com/urrri/babel-plugin-jsx-map-class-props/issues/new?title=New%20configuration:).
-
-### Allowed combinations of source-target options 
+#### Allowed combinations of source-target options 
 **(in priority order)**
 
 |Source|Target| Strategy Description|
@@ -84,6 +88,17 @@ Missing a configuration? [Raise an issue](https://github.com/urrri/babel-plugin-
 > - if attribute is matched by a mapping, other mappings are ignored 
 >   (in other words, an attribute can have only one target) 
 
+### Out File Options
+|Name|Type|Description|Default|
+|---|---|---|---|
+|`name`|`string`|Name of the file that should match `outFileName` option value.||
+|`format`|`?('js'ǀ'json'ǀfunction)`|Format of the out file content or function for the custom file formatting.|`'js'`|
+|`flat`|`?boolean`|If `true`, merges all groups together to a flat list.  |`false`|
+|`varFormat`|`?GenerateScopedNameConfigurationType`|Pattern for variable names formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename).  ||
+|`groupFormat`|`?GenerateScopedNameConfigurationType`|Pattern for variable group names formatting. Refer to [Generating scoped names](https://github.com/css-modules/postcss-modules#generating-scoped-names) and [Interpolate Name](https://github.com/webpack/loader-utils#interpolatename). *Ignored if `flat` option is `true`* |`'[path]-[name]'`|
+|`case`|`?('camel'ǀ'upper')`|Post-processes variable name and changes case as following: <ul><li>`camel` - *theVarName*</li><li>`upper` - *THE_VAR_NAME*</li></ul> _Note: any non-alphanumeric character will be compacted_ |`'camel'`|
+
+Missing a configuration? [Raise an issue](https://github.com/urrri/babel-plugin-jsx-map-class-props/issues/new?title=New%20configuration:).
 
 ## How does it work?
 
@@ -99,6 +114,7 @@ Missing a configuration? [Raise an issue](https://github.com/urrri/babel-plugin-
     * If source and target values are a string literal, generates a string literal value.
     * If source or target value is a [`jSXExpressionContainer`](https://github.com/babel/babel/tree/master/packages/babel-types#jsxexpressioncontainer), uses a helper function ([`joinClassNames`](src/helpers/joinClassNames.js)) to join values at runtime.
 1. Removes the source attribute from the element.
+1. If `outFileName` option is present, adds variable to the file according to the options defined for the file
 
 
 ## Runtime attribute value formatting and merging
@@ -142,6 +158,10 @@ import _joinClassNames from 'babel-plugin-jsx-map-class-props/dist/browser/joinC
 } />;
 
 ```
+
+## Saving mapped class names in the file
+
+To simplify using mapped class names in e.g. tests there can be defined output file(s) with constants matching appropriated class names. The output file can have JavaScript, JSON or custom format (`format` option). The constants can be grouped by the input files or be presented as a flat list (`flat` option). Group names and constant names can be decorated with [scoped name pattern](https://github.com/webpack/loader-utils#interpolatename) (`groupFormat`, `varFormat` options). Then names will be compacted and converted to camelCase or UPPER_SNAKE_CASE format (`case` option). All non-alphanumeric characters will be removed (including $ sign).
 
 ## Have a question or want to suggest an improvement?
 

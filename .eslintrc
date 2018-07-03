@@ -49,6 +49,7 @@
       "TemplateLiteral"
     ],
     "no-param-reassign": 0,
-    "no-unused-vars": "warn"
+    "no-unused-vars": "warn",
+    "complexity": ["warn", 11]
   }
 }
